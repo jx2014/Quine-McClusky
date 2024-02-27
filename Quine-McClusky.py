@@ -14,11 +14,10 @@ def bin2str(x: int):
     return bin(x)[2:].zfill(num_of_bits)
 
 
-def find_weight(x):
+def find_weight(x: str) -> int:
     weight = 0
-    while x > 0:
-        weight = weight + (x & 1)
-        x = x >> 1
+    for n in range(len(x)):
+        weight = weight + (1 if x[n] == "1" else 0)
     return weight
 
 
@@ -47,19 +46,44 @@ def compare_minterms(x: str, y: str) -> str | None:
 
 
 class WeightTable:
-    def __init__(self, weight):
+    def __init__(self):
         self.groups = {}
         self.weight_list = []
 
-    def add_item(self, weight, j, pattern):
+    def add_item(self, weight: int, j: list[int], pattern: str, check_mark: bool):
         if weight not in self.groups:
             self.groups[weight] = []
             self.weight_list.append(weight)
-        self.groups[weight].append({'j':[j], 'pattern': pattern})
+        self.groups[weight].append({'j': j, 'pattern': pattern, 'check_mark': check_mark})
 
     def compare_adjacent_group(self):
-        for base_weight in self.weight_list[:-1]:
-            self.groups
+        for i, w in enumerate(self.weight_list):
+            base_weight_group = self.weight_list[i]
+            try:
+                target_weight_group = self.weight_list[i+1]
+            except IndexError:
+                # reached the end of list
+                continue
+
+            for base in self.groups[base_weight_group]:
+                for target in self.groups[target_weight_group]:
+                    compare_minterms(base['pattern'], target['pattern'])
+
+
+# initialize
+match0 = WeightTable()
+for item in sop:
+    sop_pattern = bin2str(item)
+    sop_weight = find_weight(sop_pattern)
+    match0.add_item(sop_weight, [item], sop_pattern, False)
+
+print(match0)
+
+
+
+
+
+
 
 
 
