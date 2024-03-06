@@ -1,4 +1,3 @@
-
 sop = [0, 2, 8, 9, 11, 10, 15]
 sop.sort()
 variables = "abcd"
@@ -48,45 +47,66 @@ def compare_minterms(x: str, y: str) -> str | None:
 class WeightTable:
     def __init__(self):
         self.groups = {}
-        self.weight_list = []
+        self.match_groups = {}
+        self.num_match_groups = 0
 
     def add_item(self, weight: int, j: list[int], pattern: str, check_mark: bool):
         if weight not in self.groups:
             self.groups[weight] = []
-            self.weight_list.append(weight)
         self.groups[weight].append({'j': j, 'pattern': pattern, 'check_mark': check_mark})
 
     def compare_adjacent_group(self):
-        for i, w in enumerate(self.weight_list):
-            base_weight_group = self.weight_list[i]
+        weight_list = list(self.groups.keys())
+        self.num_match_groups += 1
+        for i, weight in enumerate(weight_list):
+            base_weight_group = self.groups.get(weight)
             try:
-                target_weight_group = self.weight_list[i+1]
+                target_weight_num = weight_list[i + 1]
+                target_weight_group = self.groups.get(target_weight_num)
             except IndexError:
-                # reached the end of list
-                continue
+                # reach the end of list
+                return None
 
-            for base in self.groups[base_weight_group]:
-                for target in self.groups[target_weight_group]:
-                    compare_minterms(base['pattern'], target['pattern'])
+            for base in base_weight_group:
+                for target in target_weight_group:
+                    compare_result = compare_minterms(base['pattern'], target['pattern'])
+                    self.process_result(base, target, compare_result)
+
+    @staticmethod
+    def process_result(base: dict, target: dict, compare_result: str):
+        w, j, pattern, check_mark = None, None, None, None
+        if compare_result:
+            pattern = compare_result
+            w = find_weight(compare_result)
+            j = base.get('j') + target.get('j')
+            j.sort()
+            base['check_mark'] = True
+            target['check_mark'] = True
+            check_mark = False
+        yield w, j, pattern, check_mark
+
+    def print_table(self):
+        print("{: >20} {: >20} {: >20} {: >20}".format("w(j)", "j", "pattern", "adjacent"))
+        for weight, terms in self.groups.items():
+            print("{: >20}".format(weight), end='')
+            for i, term in enumerate(terms):
+                j = str(term.get('j'))
+                check_mark = '✓' if term.get('check_mark') else ' '
+                if i > 0:
+                    print("{: >20}".format(' '), end='')
+                print("{: >20} {: >20} {: >20}".format(j, term.get('pattern'), check_mark))
 
 
 # initialize
-match0 = WeightTable()
+match_table = {}
+match_table[0] = WeightTable()
+match0 = match_table.get(0)
+
 for item in sop:
     sop_pattern = bin2str(item)
     sop_weight = find_weight(sop_pattern)
     match0.add_item(sop_weight, [item], sop_pattern, False)
 
 print(match0)
-
-
-
-
-
-
-
-
-
-
-
-
+match0.print_table()
+match0.compare_adjacent_group()
