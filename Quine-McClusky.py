@@ -1,3 +1,4 @@
+from typing import List
 sop = [0, 2, 8, 9, 11, 10, 15]
 sop.sort()
 variables = "abcd"
@@ -50,9 +51,10 @@ class WeightTable:
         self.match_groups = {}
         self.num_match_groups = 0
 
-    def add_item(self, weight: int, j: list[int], pattern: str, check_mark: bool):
+    def add_item(self, weight: int, j: List[int], pattern: str, check_mark: bool):
         if weight not in self.groups:
             self.groups[weight] = []
+        # TODO: need to add checker to prevent duplications.
         self.groups[weight].append({'j': j, 'pattern': pattern, 'check_mark': check_mark})
 
     def compare_adjacent_group(self):
@@ -70,20 +72,22 @@ class WeightTable:
             for base in base_weight_group:
                 for target in target_weight_group:
                     compare_result = compare_minterms(base['pattern'], target['pattern'])
-                    self.process_result(base, target, compare_result)
+                    yield self.process_result(base, target, compare_result)
 
     @staticmethod
-    def process_result(base: dict, target: dict, compare_result: str):
-        w, j, pattern, check_mark = None, None, None, None
+    def process_result(base: dict, target: dict, compare_result: str) -> tuple[
+        int | None, List[int] | None, str | None, bool | None]:
+
+        weight, j, pattern, check_mark = None, None, None, None
         if compare_result:
             pattern = compare_result
-            w = find_weight(compare_result)
+            weight = find_weight(compare_result)
             j = base.get('j') + target.get('j')
             j.sort()
             base['check_mark'] = True
             target['check_mark'] = True
             check_mark = False
-        yield w, j, pattern, check_mark
+        return weight, j, pattern, check_mark
 
     def print_table(self):
         print("{: >20} {: >20} {: >20} {: >20}".format("w(j)", "j", "pattern", "adjacent"))
@@ -98,15 +102,35 @@ class WeightTable:
 
 
 # initialize
-match_table = {}
-match_table[0] = WeightTable()
-match0 = match_table.get(0)
+t = 0
+match_tables = {}
+match_tables[t] = WeightTable()
 
 for item in sop:
     sop_pattern = bin2str(item)
     sop_weight = find_weight(sop_pattern)
-    match0.add_item(sop_weight, [item], sop_pattern, False)
+    match_tables[t].add_item(sop_weight, [item], sop_pattern, False)
 
-print(match0)
-match0.print_table()
-match0.compare_adjacent_group()
+match_tables[t].print_table()
+t += 1
+match_tables[t] = WeightTable()
+for w, j, p, c in match_tables[t-1].compare_adjacent_group():
+    if j is None:
+        continue
+    match_tables[t].add_item(w, j, p, c)
+
+t += 1
+match_tables[t] = WeightTable()
+for w, j, p, c in match_tables[t-1].compare_adjacent_group():
+    if j is None:
+        continue
+    match_tables[t].add_item(w, j, p, c)
+
+t += 1
+match_tables[t] = WeightTable()
+for w, j, p, c in match_tables[t-1].compare_adjacent_group():
+    if j is None:
+        continue
+    match_tables[t].add_item(w, j, p, c)
+
+t += 1
