@@ -1,9 +1,6 @@
+import sys
 from typing import List
 
-sop = [0, 2, 8, 9, 11, 10, 15]
-sop.sort()
-variables = "abcd"
-num_of_bits = len(variables)
 
 def bin2str(x: int, bit_count: int):
     """
@@ -26,6 +23,7 @@ class WeightTable:
         self.groups = {}
         self.num_match_groups = 0
         self.prime_implicants = []
+        self.pi_binary_representation = {}
 
     @property
     def valid_groups(self):
@@ -45,6 +43,7 @@ class WeightTable:
                     return
         self.groups[weight].append({'j': j, 'pattern': pattern, 'check_mark': check_mark})
         self.prime_implicants.append(j)
+        self.pi_binary_representation[str(j)] = pattern
 
     def compare_adjacent_group(self):
         weight_list = list(self.groups.keys())
@@ -67,6 +66,7 @@ class WeightTable:
     def remove_prime_implicants(self, j: List[int]):
         if j in self.prime_implicants:
             self.prime_implicants.remove(j)
+            self.pi_binary_representation.pop(str(j))
 
     def process_result(self, base: dict, target: dict, compare_result: str) -> tuple[
         int | None, List[int] | None, str | None, bool | None]:
@@ -119,47 +119,88 @@ class WeightTable:
                 print("{: >20} {: >20} {: >20}".format(j, term.get('pattern'), check_mark))
 
 
-def print_final_table(list_of_prime_implicants: List[List[int]]):
-    table_title = "\n\nMinterm| " + " | ".join(f"col_{i}" for i in range((len(list_of_prime_implicants)))) + " | "
+def print_prime_implicant_table(list_of_prime_implicants: List[List[int]]):
     all_minterms = sorted(set(sum(list_of_prime_implicants, [])))
-
+    table_title = "\n\nMinterm| " + " | ".join(f"col_{i}" for i in range((len(list_of_prime_implicants)))) + " | "
     print(table_title)
     for minterm in all_minterms:
         print("%6d |" % minterm, end="")
         for col, lst in enumerate(list_of_prime_implicants, 1):
-            print_place_holder = True
-            for n in lst:
-                if minterm == n:
-                    print("%5d  |" % n, end="")
-                    print_place_holder = False
-                    break
-            if print_place_holder:
+            if minterm in lst:
+                print("   x   |", end="")
+            else:
                 print("       |", end="")
         print("")
 
+def find_essential_pis(list_of_prime_implicants: List[List[int]]) -> tuple[List[int]]:
+    essential_pi = []
+    for n, pi in enumerate(list_of_prime_implicants):
+        for minterm in pi:
+            if minterm not in [x for sublist in list_of_prime_implicants[0:n] + list_of_prime_implicants[n+1:] for x in sublist]:
+                essential_pi.append(pi)
+                break
+    return essential_pi
 
-# initialize
-t = 0
-match_tables = {t: WeightTable()}
-prime_implicants = []
+if __name__ == "__main__":
 
-for item in sop:
-    sop_pattern = bin2str(item, num_of_bits)
-    sop_weight = find_weight(sop_pattern)
-    match_tables[t].add_item(sop_weight, [item], sop_pattern, False)
+    #sop = [0, 2, 8, 9, 11, 10, 15]
+    sop = input("Enter SOP:\nExample: 0 2 8 9 11 10 15: ")
+    sop = sop.split(' ')
+    sop = [int(n) for n in sop if n != '']
+    sop.sort()
+    #variables = "abcd"
+    varialbes = input("Enter Variables: Example: ABCDEFG or WXYZ: ")
+    variables = varialbes.upper().split(' ')[0]
+    num_of_bits = len(variables)
 
-while True:
-    a_new_table = WeightTable()
-    for w, j, p, c in match_tables[t].compare_adjacent_group():
-        if j is None:
-            continue
-        a_new_table.add_item(w, j, p, c)
-    match_tables[t].print_table()
-    prime_implicants += match_tables[t].prime_implicants
-    if a_new_table.valid_groups == 0:
-        break
-    t += 1
-    match_tables[t] = a_new_table
+    # Verify number of bits are enough to cover SOPs.
+    if 2**num_of_bits < sop[-1]:
+        print("Maximum SOP term () exceed the number of variables entered." % sop[-1])
+        sys.exit()
 
-print_final_table(prime_implicants)
-print("Next ...")
+    # initialize
+    t = 0
+    match_tables = {t: WeightTable()}
+    prime_implicants = []
+    essential_pi = []
+    prime_implicants_binary = {}
+
+    for item in sop:
+        sop_pattern = bin2str(item, num_of_bits)
+        sop_weight = find_weight(sop_pattern)
+        match_tables[t].add_item(sop_weight, [item], sop_pattern, False)
+
+    while True:
+        a_new_table = WeightTable()
+        for w, j, p, c in match_tables[t].compare_adjacent_group():
+            if j is None:
+                continue
+            a_new_table.add_item(w, j, p, c)
+        match_tables[t].print_table()
+        prime_implicants += match_tables[t].prime_implicants
+        prime_implicants_binary.update(match_tables[t].pi_binary_representation)
+        if a_new_table.valid_groups == 0:
+            break
+        t += 1
+        match_tables[t] = a_new_table
+
+    print_prime_implicant_table(prime_implicants)
+    essentail_prime_implicant = find_essential_pis(prime_implicants)
+
+
+    boolean_representation = []
+    for epi in essentail_prime_implicant:
+        boolean_expression = ""
+        m = prime_implicants_binary.get(str(epi))
+        for n, var in enumerate(variables):
+            if m[n] == '1':
+                boolean_expression += var
+            if m[n] == '0':
+                boolean_expression += "%s'" % var
+            if m[n] == '_':
+                continue
+        boolean_representation.append(boolean_expression)
+
+    print("\n")
+    print('F = %s ' % ' + '.join(boolean_representation))
+    print("...Good bye...")
