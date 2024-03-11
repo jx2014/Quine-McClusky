@@ -23,7 +23,6 @@ This script simplifies Sum of Products (SOP) expressions using the Quine-McClusk
 
 ## Example Input and Output
 ```plaintext
-Connected to pydev debugger (build 233.13763.11)
 Enter SOP:
 Example: 0 2 8 9 11 10 15: 0 2 4 6 7 8 10 11 12 13 14 16 18 19 29 30
 Enter Variables: Example: ABCDEFG or WXYZ: VWXYZ
