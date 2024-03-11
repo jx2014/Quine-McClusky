@@ -1,4 +1,5 @@
 import sys
+import math
 from typing import List
 
 if sys.version_info < (3,12):
@@ -159,7 +160,9 @@ if __name__ == "__main__":
 
     # Verify number of bits are enough to cover SOPs.
     if 2**num_of_bits < sop[-1]:
-        print("Maximum SOP term () exceed the number of variables entered." % sop[-1])
+        min_vars = math.ceil(math.log(sop[-1])/math.log(2))
+        print("Maximum SOP term (%d) exceed the number of variables entered.\n"
+              "Need at least (%d) variables." % (sop[-1], min_vars))
         sys.exit()
 
     # initialize
