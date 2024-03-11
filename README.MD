@@ -11,7 +11,7 @@ This script simplifies Sum of Products (SOP) expressions using the Quine-McClusk
 ## How to Run
 
 ### Prerequisites
-- Python 3.x installed on your system.
+- Python 3.12 installed on your system.
 
 ### Instructions
 1. Open a terminal or command prompt.

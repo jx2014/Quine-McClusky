@@ -1,6 +1,10 @@
 import sys
 from typing import List
 
+if sys.version_info < (3,12):
+    print("This script requires Python 3.12 or higher")
+    sys.exit(1)
+
 
 def bin2str(x: int, bit_count: int):
     """
